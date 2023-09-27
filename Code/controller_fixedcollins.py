@@ -89,9 +89,110 @@ class FixedCollins:
         use_torque: indicates if exokeleton should apply torque (1 for torque, 0 for slack/no torque)
         """
 
-        self.feedback_mode = feedback_mode
+        self.feedback_mode = feedback_mode                                  # Need to provide audio feedback in external program 
         self.left_boot.read_data()
         self.right_boot.read_data()
 
         if use_torque == 1:
-            self.left_boot.run
+            # apply appropriate torques according to Zhang/Collins profile 
+            self.left_boot.run_collins_profile(external_read = True)
+            self.right_boot.run_collins_profile(external_read = True)
+        else:
+            # set the control mode to current and set the current command to 0, i.e. no torque / slack belt  
+            self.left_boot.zero_current()
+            self.right_boot.zero_current()
+
+    def free_training(self, restart_trial = False):
+        """Free exploration training protocol, where the user walks with no guidance or feedback with a fixed Zhang/Collins controller.
+
+        Parameters
+        ----------
+        restart_trial: boolean indicating if the trial should be restarted (default=False)
+
+        Output
+        ----------
+        trial_running: indicates whether trial is running or ended (True=running, False=ended)
+        """
+        segment_min = 10                                                    # Free exploration training: 10 minutes of walking with fixed Collins controller 
+        feedback_mode = -1                                                  # No feedback provided 
+        use_torque = 1                                                      # Apply torque according to Zhang/Collins profile 
+        trial_running = True                                                # Return value to let the external script know if the trial is over.
+        current_idx = self.check_time(segment_min, restart_trial)           # Check if which trial segment we are in or if the trial has ended (-1)
+
+        if restart_trial:
+            self.left_boot.clear_gait_estimate()
+            self.right_boot.clear_gait_estimate()
+        
+        if current_idx != -1:                                           
+            self.trial_handler(feedback_mode[current_idx], use_torque[current_idx])
+        else:
+            # trial has ended, set current to zero and return that trial has finished 
+            self.left_boot.zero_current()
+            self.right_boot.zero_current()
+            trial_running = False
+            
+        return trial_running
+    
+    def guided_training(self, restart_trial = False):
+        """Guided exploration training protocol, where the user walks with the fixed Zhang/Collins controller and audio feedback (metronome for 5 minutes, strategy feedback for 5 minutes).
+
+        Parameters
+        ----------
+        restart_trial: boolean indicating if the trial should be restarted (default=False)
+
+        Output
+        ----------
+        trial_running: indicates whether trial is running or ended (True=running, False=ended)
+        """
+
+        segment_min = [5, 5]                                                # Guided exploration training: 5 mins of metronome, 5 mins of strategy feedback
+        feedback_mode = [0, 1]                                              # Metronome audio (0), then strategy feedback (1)
+        use_torque = [1, 1]                                                 # Apply torque according to Zhang/Collins profile 
+        trial_running = True                                                # Return value to let the external script know if the trial is over.
+        current_idx = self.check_time(segment_min, restart_trial)           # Check if which trial segment we are in or if the trial has ended (-1)
+
+        if restart_trial:
+            self.left_boot.clear_gait_estimate()
+            self.right_boot.clear_gait_estimate()
+
+        if current_idx != -1:                                           
+            self.trial_handler(feedback_mode[current_idx], use_torque[current_idx])
+        else:
+            # trial has ended, set current to zero and return that trial has finished 
+            self.left_boot.zero_current()
+            self.right_boot.zero_current()
+            trial_running = False
+            
+        return trial_running
+    
+    def testing(self, restart_trial = False):
+        """Testing protocol, where the user walks with the fixed Zhang/Collins controller for 30 minutes. 
+
+        Parameters
+        ----------
+        restart_trial: boolean indicating if the trial should be restarted (default=False)
+
+        Output
+        ----------
+        trial_running: indicates whether trial is running or ended (True=running, False=ended)
+        """
+        segment_min = 30                                                    # 30 minutes of walking with Zhang/Collins controller 
+        feedback_mode = -1                                                  # No feedback
+        use_torque = 1                                                      # Apply torque according to Zhang/Collins profile 
+        trial_running = True                                                # Return value to let the external script know if the trial is over.
+        current_idx = self.check_time(segment_min, restart_trial)           # Check if which trial segment we are in or if the trial has ended (-1)
+
+        if restart_trial:
+            self.left_boot.clear_gait_estimate()
+            self.right_boot.clear_gait_estimate()
+
+        if current_idx != -1:                                           
+            self.trial_handler(feedback_mode[current_idx], use_torque[current_idx])
+        else:
+            # trial has ended, set current to zero and return that trial has finished 
+            self.left_boot.zero_current()
+            self.right_boot.zero_current()
+            trial_running = False
+            
+        return trial_running
+    
