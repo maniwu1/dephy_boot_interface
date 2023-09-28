@@ -17,7 +17,7 @@
 import time 
 import numpy as np 
 
-class FixedCollins:
+class Coadaptive:
     def __init__(self, user_mass, left_boot, right_boot, EMG):
         """Initialize fixed controller based on the Zhang/Collins profile. 
 
@@ -90,12 +90,12 @@ class FixedCollins:
         """
 
         self.feedback_mode = feedback_mode                                  # Need to provide audio feedback in external program 
-        self.left_boot.read_data()                                          # Updates exoskeleton data and approximates percent_gait, expected gait duration, etc
+        self.left_boot.read_data()
         self.right_boot.read_data()
 
         if use_torque == 1:
-            # apply appropriate torques according to Zhang/Collins profile 
-            self.left_boot.run_collins_profile(external_read = True)        # Applies torque according to gait percent and Zhang/Collins profile 
+            # TO DO: Implement co-adaptive controller 
+            self.left_boot.run_collins_profile(external_read = True)
             self.right_boot.run_collins_profile(external_read = True)
         else:
             # set the control mode to current and set the current command to 0, i.e. no torque / slack belt  
